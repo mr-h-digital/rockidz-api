@@ -67,12 +67,12 @@ badges, Q&A/community.
 2. Add a service from this repo (Railway auto-detects the Maven build via
    `pom.xml` — no Dockerfile needed for a standard Spring Boot app).
 3. Set these environment variables on the service (Railway → Variables):
-   - `SPRING_DATASOURCE_URL` — `jdbc:postgresql://<PGHOST>:<PGPORT>/<PGDATABASE>`
-     (build this from the Postgres plugin's connection details, or reference
-     them directly if Railway exposes `PGHOST`/`PGPORT`/`PGDATABASE` as
-     variables you can interpolate)
-   - `SPRING_DATASOURCE_USERNAME` — from the Postgres plugin
-   - `SPRING_DATASOURCE_PASSWORD` — from the Postgres plugin
+   - Preferred: link the Postgres plugin so Railway injects `PGHOST`, `PGPORT`,
+     `PGDATABASE`, `PGUSER`, `PGPASSWORD`.
+   - Optional explicit override: set `SPRING_DATASOURCE_URL`,
+     `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`.
+   - If your Railway setup exposes only `DATABASE_URL` (postgres://...), the app
+     auto-converts it to Spring JDBC settings at startup.
    - `JWT_SECRET` — a long random string (32+ characters). Generate one with
      `openssl rand -base64 48`, don't reuse the placeholder in `application.yml`.
    - `CORS_ALLOWED_ORIGINS` — `https://learn.rockmission.co.za` (add

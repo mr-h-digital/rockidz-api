@@ -3,12 +3,14 @@ spring:
     name: rock-mission-learn-api
 
   datasource:
-    # Railway injects DATABASE_URL as postgres://user:pass@host:port/db
-    # Spring needs jdbc:postgresql://... — see DataSourceConfig for the conversion,
-    # or set these three env vars directly on Railway instead:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/rockmission_learn}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    # Priority:
+    # 1) SPRING_DATASOURCE_* (explicit)
+    # 2) Railway PG* vars (PGHOST/PGPORT/PGDATABASE/PGUSER/PGPASSWORD)
+    # 3) Local defaults
+    # If Railway only provides DATABASE_URL, LearnApiApplication maps it at startup.
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5432}/${PGDATABASE:rockmission_learn}}
+    username: ${SPRING_DATASOURCE_USERNAME:${PGUSER:postgres}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${PGPASSWORD:postgres}}
     driver-class-name: org.postgresql.Driver
 
   jpa:

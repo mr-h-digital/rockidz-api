@@ -16,6 +16,7 @@ and persists to PostgreSQL on Railway.
 
 - Core schema: `users`, `courses`, `modules`, `lessons`, `enrollments`, `lesson_progress`
 - Auth: `POST /api/auth/signup`, `POST /api/auth/login` (returns a JWT)
+- Password recovery: `POST /api/auth/forgot-password`, `POST /api/auth/reset-password`
 - Courses: public `GET /api/courses` / `GET /api/courses/{slug}`, educator-only
   `POST /api/courses`, `PATCH /api/courses/{id}/publish`, and `GET /api/courses/mine`
   (the signed-in educator's own draft + published courses, filtered by `createdBy.id`)
@@ -29,10 +30,36 @@ and persists to PostgreSQL on Railway.
   lesson in the course is done (this is the hook point for certificate generation later)
 - Educator roster: `GET /api/courses/{id}/roster` — enrolled students plus each one's
   completed/total lesson counts, owner-checked so an educator only sees their own courses
+- Admin role management: `PATCH /api/admin/users/role` (admin-only) — promote
+  registered users to `EDUCATOR` (or change to `ADMIN`/`STUDENT`) by email
+- Profile settings: `GET /api/users/me`, `PATCH /api/users/me` (display name,
+  email, and optional password change with current-password verification)
 
 Ownership rule throughout: only the educator who created a course (or an admin)
 can author modules/lessons on it or view its roster — enforced in each controller,
 not just at the route level.
+
+## Promoting a user to educator
+
+1. Ensure the caller is signed in as an `ADMIN` user.
+2. Call:
+
+   ```bash
+   curl -X PATCH https://api.rockmission.co.za/api/admin/users/role \
+     -H "Authorization: Bearer <ADMIN_JWT>" \
+     -H "Content-Type: application/json" \
+     -d '{"email":"educator@example.com","role":"EDUCATOR"}'
+   ```
+
+3. Ask that user to sign out and sign in again so their JWT contains the new role.
+
+## Password reset notes
+
+- `POST /api/auth/forgot-password` always returns a generic success message.
+- For environments without email infrastructure yet, set
+  `EXPOSE_RESET_TOKEN=true` to include a temporary reset URL/token in the API
+  response so the frontend flow can still be tested.
+- Keep `EXPOSE_RESET_TOKEN=false` in production once SMTP/email delivery is in place.
 
 Not yet built (planned for later phases, per the roadmap): quizzes, certificates,
 badges, Q&A/community.

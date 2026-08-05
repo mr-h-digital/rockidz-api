@@ -46,7 +46,6 @@ public class CourseController {
 
     /** The signed-in educator's own courses (draft + published) — powers the Teach page. */
     @GetMapping("/mine")
-    @PreAuthorize("hasAnyRole('EDUCATOR', 'ADMIN')")
     public List<CourseSummaryResponse> mine(@AuthenticationPrincipal User currentUser) {
         return courseRepository.findByCreatedById(currentUser.getId())
                 .stream()

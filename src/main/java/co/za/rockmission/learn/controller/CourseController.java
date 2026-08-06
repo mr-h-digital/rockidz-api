@@ -106,9 +106,7 @@ public class CourseController {
 
         assertOwnerOrAdmin(course.getId(), currentUser);
 
-        long totalLessons = course.getModules().stream()
-                .mapToLong(m -> lessonRepository.findByModuleIdOrderByOrderIndexAsc(m.getId()).size())
-                .sum();
+        long totalLessons = lessonRepository.countByCourseId(id);
 
         return enrollmentRepository.findByCourseId(id).stream()
                 .map(e -> toRosterEntry(e, totalLessons))
@@ -134,16 +132,13 @@ public class CourseController {
 
     /** Only the educator who created the course (or an admin) may modify it. */
     private void assertOwnerOrAdmin(Long courseId, User currentUser) {
-                if (currentUser == null) {
-                        throw new ApiException(HttpStatus.UNAUTHORIZED, "Authentication required");
-                }
+        if (currentUser == null) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "Authentication required");
+        }
 
         boolean isAdmin = currentUser.getAuthorities().stream()
                 .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
         boolean isOwner = courseRepository.existsByIdAndCreatedById(courseId, currentUser.getId());
-
-                log.info("Course authz check: courseId={}, userId={}, email={}, isAdmin={}, isOwner={}",
-                                courseId, currentUser.getId(), currentUser.getEmail(), isAdmin, isOwner);
 
         if (!isOwner && !isAdmin) {
             throw new ApiException(HttpStatus.FORBIDDEN, "You do not own this course");

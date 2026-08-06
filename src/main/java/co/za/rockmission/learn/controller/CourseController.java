@@ -89,7 +89,7 @@ public class CourseController {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Course not found"));
 
-        assertOwnerOrAdmin(course, currentUser);
+        assertOwnerOrAdmin(course.getId(), currentUser);
 
         course.setStatus(Course.CourseStatus.PUBLISHED);
         courseRepository.save(course);
@@ -102,7 +102,7 @@ public class CourseController {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Course not found"));
 
-        assertOwnerOrAdmin(course, currentUser);
+        assertOwnerOrAdmin(course.getId(), currentUser);
 
         long totalLessons = course.getModules().stream()
                 .mapToLong(m -> lessonRepository.findByModuleIdOrderByOrderIndexAsc(m.getId()).size())
@@ -131,9 +131,10 @@ public class CourseController {
     }
 
     /** Only the educator who created the course (or an admin) may modify it. */
-    private void assertOwnerOrAdmin(Course course, User currentUser) {
-        boolean isOwner = course.getCreatedBy().getId().equals(currentUser.getId());
-        boolean isAdmin = currentUser.getRole().name().equals("ADMIN");
+    private void assertOwnerOrAdmin(Long courseId, User currentUser) {
+        boolean isAdmin = currentUser.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+        boolean isOwner = courseRepository.existsByIdAndCreatedById(courseId, currentUser.getId());
         if (!isOwner && !isAdmin) {
             throw new ApiException(HttpStatus.FORBIDDEN, "You do not own this course");
         }

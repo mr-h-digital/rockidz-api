@@ -21,4 +21,6 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
 
     @EntityGraph(attributePaths = "createdBy")
     Optional<Course> findById(Long id);
+
+    boolean existsByIdAndCreatedById(Long id, Long createdById);
 }

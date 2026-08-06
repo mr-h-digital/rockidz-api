@@ -15,7 +15,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -44,7 +43,6 @@ public class ModuleController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('EDUCATOR', 'ADMIN')")
     public ResponseEntity<ModuleResponse> create(
             @PathVariable Long courseId,
             @Valid @RequestBody CreateModuleRequest request,
@@ -53,7 +51,7 @@ public class ModuleController {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Course not found"));
 
-        assertOwnerOrAdmin(course, currentUser);
+        assertOwnerOrAdmin(course.getId(), currentUser);
 
         Module module = Module.builder()
                 .course(course)
@@ -66,7 +64,6 @@ public class ModuleController {
     }
 
     @DeleteMapping("/{moduleId}")
-    @PreAuthorize("hasAnyRole('EDUCATOR', 'ADMIN')")
     public ResponseEntity<Void> delete(
             @PathVariable Long courseId,
             @PathVariable Long moduleId,
@@ -74,7 +71,7 @@ public class ModuleController {
     ) {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Course not found"));
-        assertOwnerOrAdmin(course, currentUser);
+        assertOwnerOrAdmin(course.getId(), currentUser);
 
         Module module = moduleRepository.findById(moduleId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Module not found"));
@@ -87,9 +84,15 @@ public class ModuleController {
         return moduleRepository.findByCourseIdOrderByOrderIndexAsc(courseId).size();
     }
 
-    private void assertOwnerOrAdmin(Course course, User currentUser) {
-        boolean isOwner = course.getCreatedBy().getId().equals(currentUser.getId());
-        boolean isAdmin = currentUser.getRole().name().equals("ADMIN");
+        private void assertOwnerOrAdmin(Long courseId, User currentUser) {
+                if (currentUser == null) {
+                        throw new ApiException(HttpStatus.UNAUTHORIZED, "Authentication required");
+                }
+
+                boolean isOwner = courseRepository.existsByIdAndCreatedById(courseId, currentUser.getId());
+                boolean isAdmin = currentUser.getAuthorities().stream()
+                                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+
         if (!isOwner && !isAdmin) {
             throw new ApiException(HttpStatus.FORBIDDEN, "You do not own this course");
         }

@@ -13,7 +13,6 @@ import co.za.rockmission.learn.repository.LessonProgressRepository;
 import co.za.rockmission.learn.repository.LessonRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,7 +28,6 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/courses")
-@Slf4j
 @RequiredArgsConstructor
 public class CourseController {
 
@@ -49,7 +47,6 @@ public class CourseController {
     /** The signed-in educator's own courses (draft + published) — powers the Teach page. */
     @GetMapping("/mine")
     public List<CourseSummaryResponse> mine(@AuthenticationPrincipal User currentUser) {
-        log.info("Teach controller reached: userId={}, email={}, role={}", currentUser.getId(), currentUser.getEmail(), currentUser.getRole());
         return courseRepository.findByCreatedById(currentUser.getId())
                 .stream()
                 .map(this::toSummary)

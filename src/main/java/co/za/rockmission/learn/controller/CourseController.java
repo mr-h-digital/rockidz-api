@@ -98,7 +98,6 @@ public class CourseController {
 
     /** Educator's view of everyone enrolled in one of their courses, with progress. */
     @GetMapping("/{id}/roster")
-    @PreAuthorize("hasAnyRole('EDUCATOR', 'ADMIN')")
     public List<RosterEntryResponse> roster(@PathVariable Long id, @AuthenticationPrincipal User currentUser) {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Course not found"));

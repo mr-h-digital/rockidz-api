@@ -13,6 +13,7 @@ import co.za.rockmission.learn.repository.LessonProgressRepository;
 import co.za.rockmission.learn.repository.LessonRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,6 +29,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/courses")
+@Slf4j
 @RequiredArgsConstructor
 public class CourseController {
 
@@ -132,9 +134,17 @@ public class CourseController {
 
     /** Only the educator who created the course (or an admin) may modify it. */
     private void assertOwnerOrAdmin(Long courseId, User currentUser) {
+                if (currentUser == null) {
+                        throw new ApiException(HttpStatus.UNAUTHORIZED, "Authentication required");
+                }
+
         boolean isAdmin = currentUser.getAuthorities().stream()
                 .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
         boolean isOwner = courseRepository.existsByIdAndCreatedById(courseId, currentUser.getId());
+
+                log.info("Course authz check: courseId={}, userId={}, email={}, isAdmin={}, isOwner={}",
+                                courseId, currentUser.getId(), currentUser.getEmail(), isAdmin, isOwner);
+
         if (!isOwner && !isAdmin) {
             throw new ApiException(HttpStatus.FORBIDDEN, "You do not own this course");
         }

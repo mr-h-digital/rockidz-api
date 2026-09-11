@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Locale;
 import java.util.UUID;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,6 +18,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @Service
+@ConditionalOnProperty(prefix = "app.storage", name = "endpoint-url")
 public class StorageService {
 
     private final StorageProperties storageProperties;

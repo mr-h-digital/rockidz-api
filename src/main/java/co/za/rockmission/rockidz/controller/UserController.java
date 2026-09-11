@@ -7,6 +7,7 @@ import co.za.rockmission.rockidz.model.User;
 import co.za.rockmission.rockidz.repository.UserRepository;
 import co.za.rockmission.rockidz.storage.StorageService;
 import jakarta.validation.Valid;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +29,7 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final StorageService storageService;
+    private final Optional<StorageService> storageService;
 
     @GetMapping("/me")
     public UserProfileResponse me(@AuthenticationPrincipal User currentUser) {
@@ -81,10 +82,16 @@ public class UserController {
             @RequestParam("file") MultipartFile file,
             @AuthenticationPrincipal User currentUser
     ) {
-        StorageService.UploadedFile uploaded = storageService.uploadAvatar(file, currentUser.getId());
+        StorageService.UploadedFile uploaded = requireStorageService().uploadAvatar(file, currentUser.getId());
         currentUser.setAvatarUrl(uploaded.url());
         userRepository.save(currentUser);
         return ResponseEntity.ok(toProfile(currentUser));
+    }
+
+    private StorageService requireStorageService() {
+        return storageService.orElseThrow(() -> new ApiException(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "File uploads are not configured yet. Please add the STORAGE_* variables in Railway first."));
     }
 
     private UserProfileResponse toProfile(User user) {

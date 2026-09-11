@@ -3,6 +3,7 @@ package co.za.rockmission.rockidz.controller;
 import co.za.rockmission.rockidz.dto.FileUploadResponse;
 import co.za.rockmission.rockidz.storage.StorageService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/admin/uploads")
 @RequiredArgsConstructor
+@ConditionalOnBean(StorageService.class)
 public class AdminUploadController {
 
     private final StorageService storageService;

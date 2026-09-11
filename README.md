@@ -104,6 +104,9 @@ badges, Q&A/community.
      auto-converts it to Spring JDBC settings at startup.
    - `JWT_SECRET` — a long random string (32+ characters). Generate one with
      `openssl rand -base64 48`, don't reuse the placeholder in `application.yml`.
+   - Optional admin bootstrap:
+     `ADMIN_BOOTSTRAP_ENABLED=true`, `ADMIN_EMAIL=admin@rockmission.co.za`,
+     `ADMIN_PASSWORD=<strong password>`, optional `ADMIN_DISPLAY_NAME`
    - `CORS_ALLOWED_ORIGINS` — `https://rockidz.rockmission.co.za` (add
      `http://localhost:5173` too while developing the React app locally)
    - File storage (Railway S3-compatible bucket):
@@ -114,6 +117,10 @@ badges, Q&A/community.
    `${PORT:8080}`, so no change needed there.
 5. On first deploy, Flyway will run `V1__init_core_schema.sql` against the
    Railway Postgres instance automatically.
+
+If admin bootstrap is enabled, startup will create the admin user if it does
+not exist yet, or promote/update that user to `ADMIN` if the email already
+exists.
 
 ## File uploads
 

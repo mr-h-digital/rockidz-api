@@ -40,6 +40,12 @@ app:
     reset-token-minutes: ${RESET_TOKEN_MINUTES:30}
     expose-reset-token: ${EXPOSE_RESET_TOKEN:false}
     reset-base-url: ${RESET_BASE_URL:https://rockidz.rockmission.co.za/reset-password}
+  bootstrap:
+    admin:
+      enabled: ${ADMIN_BOOTSTRAP_ENABLED:false}
+      email: ${ADMIN_EMAIL:}
+      password: ${ADMIN_PASSWORD:}
+      display-name: ${ADMIN_DISPLAY_NAME:Rock Mission Admin}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,https://rockidz.rockmission.co.za}
   storage:

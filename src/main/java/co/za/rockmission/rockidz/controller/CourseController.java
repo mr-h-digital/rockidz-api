@@ -3,6 +3,7 @@ package co.za.rockmission.rockidz.controller;
 import co.za.rockmission.rockidz.dto.CourseSummaryResponse;
 import co.za.rockmission.rockidz.dto.CreateCourseRequest;
 import co.za.rockmission.rockidz.dto.RosterEntryResponse;
+import co.za.rockmission.rockidz.dto.UpdateCourseRequest;
 import co.za.rockmission.rockidz.exception.ApiException;
 import co.za.rockmission.rockidz.model.Course;
 import co.za.rockmission.rockidz.model.Enrollment;
@@ -83,6 +84,31 @@ public class CourseController {
 
         courseRepository.save(course);
         return ResponseEntity.status(HttpStatus.CREATED).body(toSummary(course));
+    }
+
+    @PatchMapping("/{id}")
+    @PreAuthorize("hasAnyRole('EDUCATOR', 'ADMIN')")
+    public CourseSummaryResponse update(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateCourseRequest request,
+            @AuthenticationPrincipal User currentUser
+    ) {
+        Course course = courseRepository.findById(id)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Course not found"));
+
+        assertOwnerOrAdmin(course.getId(), currentUser);
+
+        String normalizedSlug = request.slug().toLowerCase().trim();
+        if (!normalizedSlug.equals(course.getSlug()) && courseRepository.existsBySlug(normalizedSlug)) {
+            throw new ApiException(HttpStatus.CONFLICT, "A course with this slug already exists");
+        }
+
+        course.setSlug(normalizedSlug);
+        course.setTitle(request.title().trim());
+        course.setDescription(request.description() == null ? null : request.description().trim());
+        course.setThumbnailUrl(request.thumbnailUrl() == null ? null : request.thumbnailUrl().trim());
+        courseRepository.save(course);
+        return toSummary(course);
     }
 
     @PatchMapping("/{id}/publish")

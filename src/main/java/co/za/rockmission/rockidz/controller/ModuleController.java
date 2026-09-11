@@ -3,6 +3,7 @@ package co.za.rockmission.rockidz.controller;
 import co.za.rockmission.rockidz.dto.CreateModuleRequest;
 import co.za.rockmission.rockidz.dto.LessonResponse;
 import co.za.rockmission.rockidz.dto.ModuleResponse;
+import co.za.rockmission.rockidz.dto.UpdateModuleRequest;
 import co.za.rockmission.rockidz.exception.ApiException;
 import co.za.rockmission.rockidz.model.Course;
 import co.za.rockmission.rockidz.model.Lesson;
@@ -78,6 +79,28 @@ public class ModuleController {
 
         moduleRepository.delete(module); // cascades to lessons (see V1 schema FK ON DELETE CASCADE)
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{moduleId}")
+    public ModuleResponse update(
+            @PathVariable Long courseId,
+            @PathVariable Long moduleId,
+            @Valid @RequestBody UpdateModuleRequest request,
+            @AuthenticationPrincipal User currentUser
+    ) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Course not found"));
+        assertOwnerOrAdmin(course.getId(), currentUser);
+
+        Module module = moduleRepository.findById(moduleId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Module not found"));
+        if (!module.getCourse().getId().equals(courseId)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Module does not belong to this course");
+        }
+
+        module.setTitle(request.title().trim());
+        moduleRepository.save(module);
+        return toResponse(module);
     }
 
     private int nextOrderIndex(Long courseId) {

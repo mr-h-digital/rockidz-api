@@ -2,6 +2,7 @@ package co.za.rockmission.rockidz.controller;
 
 import co.za.rockmission.rockidz.dto.CreateLessonRequest;
 import co.za.rockmission.rockidz.dto.LessonResponse;
+import co.za.rockmission.rockidz.dto.UpdateLessonRequest;
 import co.za.rockmission.rockidz.exception.ApiException;
 import co.za.rockmission.rockidz.model.Lesson;
 import co.za.rockmission.rockidz.model.Module;
@@ -79,6 +80,32 @@ public class LessonController {
 
         lessonRepository.delete(lesson);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{lessonId}")
+    @PreAuthorize("hasAnyRole('EDUCATOR', 'ADMIN')")
+    public LessonResponse update(
+            @PathVariable Long moduleId,
+            @PathVariable Long lessonId,
+            @Valid @RequestBody UpdateLessonRequest request,
+            @AuthenticationPrincipal User currentUser
+    ) {
+        Module module = moduleRepository.findById(moduleId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Module not found"));
+        assertOwnerOrAdmin(module, currentUser);
+
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Lesson not found"));
+        if (!lesson.getModule().getId().equals(moduleId)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Lesson does not belong to this module");
+        }
+
+        lesson.setTitle(request.title().trim());
+        lesson.setVideoProvider(Lesson.VideoProvider.valueOf(request.videoProvider().toUpperCase().trim()));
+        lesson.setVideoRef(request.videoRef().trim());
+        lesson.setDurationSeconds(request.durationSeconds());
+        lessonRepository.save(lesson);
+        return toResponse(lesson);
     }
 
     private int nextOrderIndex(Long moduleId) {

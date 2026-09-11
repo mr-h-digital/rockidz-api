@@ -20,11 +20,10 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 public class StorageService {
 
     private final StorageProperties storageProperties;
-    private final S3Client s3Client;
+    private volatile S3Client s3Client;
 
     public StorageService(StorageProperties storageProperties) {
         this.storageProperties = storageProperties;
-        this.s3Client = buildClient(storageProperties);
     }
 
     public UploadedFile uploadAvatar(MultipartFile file, Long userId) {
@@ -53,7 +52,7 @@ public class StorageService {
         String objectKey = prefix + UUID.randomUUID() + resolveExtension(file.getOriginalFilename(), contentType);
 
         try {
-            s3Client.putObject(
+            getS3Client().putObject(
                     PutObjectRequest.builder()
                             .bucket(requireConfigured(storageProperties.bucketName(), "STORAGE_BUCKET_NAME"))
                             .key(objectKey)
@@ -73,6 +72,20 @@ public class StorageService {
         requireConfigured(storageProperties.bucketName(), "STORAGE_BUCKET_NAME");
         requireConfigured(storageProperties.accessKeyId(), "STORAGE_ACCESS_KEY_ID");
         requireConfigured(storageProperties.secretAccessKey(), "STORAGE_SECRET_ACCESS_KEY");
+    }
+
+    private S3Client getS3Client() {
+        S3Client client = s3Client;
+        if (client != null) {
+            return client;
+        }
+
+        synchronized (this) {
+            if (s3Client == null) {
+                s3Client = buildClient(storageProperties);
+            }
+            return s3Client;
+        }
     }
 
     private S3Client buildClient(StorageProperties properties) {

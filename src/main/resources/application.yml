@@ -44,7 +44,7 @@ app:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,https://rockidz.rockmission.co.za}
   storage:
     endpoint-url: ${STORAGE_ENDPOINT_URL:}
-    region: ${STORAGE_REGION:auto}
+    region: ${STORAGE_REGION:}
     bucket-name: ${STORAGE_BUCKET_NAME:}
     access-key-id: ${STORAGE_ACCESS_KEY_ID:}
     secret-access-key: ${STORAGE_SECRET_ACCESS_KEY:}

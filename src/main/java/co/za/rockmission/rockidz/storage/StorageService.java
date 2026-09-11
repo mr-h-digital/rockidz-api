@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Locale;
 import java.util.UUID;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,7 +17,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @Service
-@ConditionalOnProperty(name = "app.storage.endpoint-url")
 public class StorageService {
 
     private final StorageProperties storageProperties;
@@ -38,6 +36,8 @@ public class StorageService {
     }
 
     private UploadedFile upload(MultipartFile file, String prefix, boolean requireImage, boolean allowDocuments) {
+        ensureConfigured();
+
         if (file == null || file.isEmpty()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Please choose a file to upload.");
         }
@@ -65,6 +65,14 @@ public class StorageService {
         }
 
         return new UploadedFile(buildPublicUrl(objectKey), objectKey, contentType);
+    }
+
+    private void ensureConfigured() {
+        requireConfigured(storageProperties.endpointUrl(), "STORAGE_ENDPOINT_URL");
+        requireConfigured(storageProperties.region(), "STORAGE_REGION");
+        requireConfigured(storageProperties.bucketName(), "STORAGE_BUCKET_NAME");
+        requireConfigured(storageProperties.accessKeyId(), "STORAGE_ACCESS_KEY_ID");
+        requireConfigured(storageProperties.secretAccessKey(), "STORAGE_SECRET_ACCESS_KEY");
     }
 
     private S3Client buildClient(StorageProperties properties) {

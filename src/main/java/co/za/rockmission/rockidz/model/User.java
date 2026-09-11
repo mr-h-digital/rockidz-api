@@ -36,6 +36,9 @@ public class User implements UserDetails {
     @Column(name = "display_name", nullable = false)
     private String displayName;
 
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default

@@ -96,6 +96,8 @@ badges, Q&A/community.
 3. Set these environment variables on the service (Railway → Variables):
    - Preferred: link the Postgres plugin so Railway injects `PGHOST`, `PGPORT`,
      `PGDATABASE`, `PGUSER`, `PGPASSWORD`.
+   - Also supported: Railway's `POSTGRES_DB`, `POSTGRES_USER`,
+     `POSTGRES_PASSWORD` variables alongside `PGHOST` / `PGPORT`.
    - Optional explicit override: set `SPRING_DATASOURCE_URL`,
      `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`.
    - If your Railway setup exposes only `DATABASE_URL` (postgres://...), the app
@@ -104,10 +106,19 @@ badges, Q&A/community.
      `openssl rand -base64 48`, don't reuse the placeholder in `application.yml`.
    - `CORS_ALLOWED_ORIGINS` — `https://rockidz.rockmission.co.za` (add
      `http://localhost:5173` too while developing the React app locally)
+   - File storage (Railway S3-compatible bucket):
+     `STORAGE_ENDPOINT_URL`, `STORAGE_REGION`, `STORAGE_BUCKET_NAME`,
+     `STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY`
+   - Optional file CDN/public URL override: `STORAGE_PUBLIC_BASE_URL`
 4. Railway sets `PORT` automatically — `application.yml` already reads
    `${PORT:8080}`, so no change needed there.
 5. On first deploy, Flyway will run `V1__init_core_schema.sql` against the
    Railway Postgres instance automatically.
+
+## File uploads
+
+- `POST /api/users/me/avatar` — authenticated avatar upload (`multipart/form-data`, field name: `file`)
+- `POST /api/admin/uploads/downloadables` — admin/educator upload for downloadable kids content (`multipart/form-data`, field name: `file`)
 
 ## Next steps
 

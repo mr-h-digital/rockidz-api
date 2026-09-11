@@ -4,6 +4,7 @@ public record UserProfileResponse(
         Long userId,
         String email,
         String displayName,
+        String avatarUrl,
         String role,
         boolean active
 ) {

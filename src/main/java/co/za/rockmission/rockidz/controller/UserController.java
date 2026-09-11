@@ -5,16 +5,21 @@ import co.za.rockmission.rockidz.dto.UserProfileResponse;
 import co.za.rockmission.rockidz.exception.ApiException;
 import co.za.rockmission.rockidz.model.User;
 import co.za.rockmission.rockidz.repository.UserRepository;
+import co.za.rockmission.rockidz.storage.StorageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/users")
@@ -23,6 +28,7 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final StorageService storageService;
 
     @GetMapping("/me")
     public UserProfileResponse me(@AuthenticationPrincipal User currentUser) {
@@ -70,11 +76,23 @@ public class UserController {
         return toProfile(currentUser);
     }
 
+    @PostMapping("/me/avatar")
+    public ResponseEntity<UserProfileResponse> uploadAvatar(
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal User currentUser
+    ) {
+        StorageService.UploadedFile uploaded = storageService.uploadAvatar(file, currentUser.getId());
+        currentUser.setAvatarUrl(uploaded.url());
+        userRepository.save(currentUser);
+        return ResponseEntity.ok(toProfile(currentUser));
+    }
+
     private UserProfileResponse toProfile(User user) {
         return new UserProfileResponse(
                 user.getId(),
                 user.getEmail(),
                 user.getDisplayName(),
+                user.getAvatarUrl(),
                 user.getRole().name(),
                 user.isActive()
         );

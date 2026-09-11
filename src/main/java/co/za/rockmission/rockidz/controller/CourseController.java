@@ -2,6 +2,7 @@ package co.za.rockmission.rockidz.controller;
 
 import co.za.rockmission.rockidz.dto.CourseSummaryResponse;
 import co.za.rockmission.rockidz.dto.CreateCourseRequest;
+import co.za.rockmission.rockidz.dto.FileUploadResponse;
 import co.za.rockmission.rockidz.dto.RosterEntryResponse;
 import co.za.rockmission.rockidz.dto.UpdateCourseRequest;
 import co.za.rockmission.rockidz.exception.ApiException;
@@ -12,6 +13,7 @@ import co.za.rockmission.rockidz.repository.CourseRepository;
 import co.za.rockmission.rockidz.repository.EnrollmentRepository;
 import co.za.rockmission.rockidz.repository.LessonProgressRepository;
 import co.za.rockmission.rockidz.repository.LessonRepository;
+import co.za.rockmission.rockidz.storage.StorageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,8 +22,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Public browsing is open (see SecurityConfig — GET is permitAll so the marketing
@@ -38,6 +42,7 @@ public class CourseController {
     private final EnrollmentRepository enrollmentRepository;
     private final LessonRepository lessonRepository;
     private final LessonProgressRepository lessonProgressRepository;
+    private final Optional<StorageService> storageService;
 
     @GetMapping
     public List<CourseSummaryResponse> listPublished() {
@@ -111,6 +116,25 @@ public class CourseController {
         return toSummary(course);
     }
 
+    @PostMapping("/{id}/thumbnail")
+    @PreAuthorize("hasAnyRole('EDUCATOR', 'ADMIN')")
+    public ResponseEntity<FileUploadResponse> uploadThumbnail(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal User currentUser
+    ) {
+        Course course = courseRepository.findById(id)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Course not found"));
+
+        assertOwnerOrAdmin(course.getId(), currentUser);
+
+        StorageService.UploadedFile uploaded = requireStorageService().uploadCourseThumbnail(file, course.getId());
+        course.setThumbnailUrl(uploaded.url());
+        courseRepository.save(course);
+
+        return ResponseEntity.ok(new FileUploadResponse(uploaded.url(), uploaded.key(), uploaded.contentType()));
+    }
+
     @PatchMapping("/{id}/publish")
     @PreAuthorize("hasAnyRole('EDUCATOR', 'ADMIN')")
     public CourseSummaryResponse publish(@PathVariable Long id, @AuthenticationPrincipal User currentUser) {
@@ -169,6 +193,12 @@ public class CourseController {
         if (!isOwner && !isAdmin) {
             throw new ApiException(HttpStatus.FORBIDDEN, "You do not own this course");
         }
+    }
+
+    private StorageService requireStorageService() {
+        return storageService.orElseThrow(() -> new ApiException(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "File uploads are not configured yet. Please add the STORAGE_* variables in Railway first."));
     }
 
     private CourseSummaryResponse toSummary(Course course) {

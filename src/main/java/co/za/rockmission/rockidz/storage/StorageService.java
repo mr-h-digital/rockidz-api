@@ -2,10 +2,20 @@ package co.za.rockmission.rockidz.storage;
 
 import co.za.rockmission.rockidz.config.StorageProperties;
 import co.za.rockmission.rockidz.exception.ApiException;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.UUID;
+import javax.imageio.IIOImage;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
+import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -21,6 +31,9 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 @ConditionalOnProperty(prefix = "app.storage", name = "endpoint-url")
 public class StorageService {
 
+    private static final int MAX_ACTIVITY_IMAGE_DIMENSION = 1600;
+    private static final float ACTIVITY_IMAGE_QUALITY = 0.82f;
+
     private final StorageProperties storageProperties;
     private volatile S3Client s3Client;
 
@@ -34,6 +47,32 @@ public class StorageService {
 
     public UploadedFile uploadDownloadable(MultipartFile file) {
         return upload(file, "downloads/", false, true);
+    }
+
+    public UploadedFile uploadCourseThumbnail(MultipartFile file, Long courseId) {
+        ensureConfigured();
+
+        if (file == null || file.isEmpty()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Please choose an image to upload.");
+        }
+
+        String contentType = normalizeContentType(file.getContentType());
+        if (!contentType.startsWith("image/")) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Only image files can be uploaded here.");
+        }
+
+        OptimizedImage optimizedImage = optimizeActivityImage(file);
+        String objectKey = "course-thumbnails/" + courseId + "/" + UUID.randomUUID() + ".webp";
+
+        getS3Client().putObject(
+                PutObjectRequest.builder()
+                        .bucket(requireConfigured(storageProperties.bucketName(), "STORAGE_BUCKET_NAME"))
+                        .key(objectKey)
+                        .contentType(optimizedImage.contentType())
+                        .build(),
+                RequestBody.fromBytes(optimizedImage.bytes()));
+
+        return new UploadedFile(buildPublicUrl(objectKey), objectKey, optimizedImage.contentType());
     }
 
     private UploadedFile upload(MultipartFile file, String prefix, boolean requireImage, boolean allowDocuments) {
@@ -66,6 +105,48 @@ public class StorageService {
         }
 
         return new UploadedFile(buildPublicUrl(objectKey), objectKey, contentType);
+    }
+
+    private OptimizedImage optimizeActivityImage(MultipartFile file) {
+        try (InputStream inputStream = file.getInputStream();
+             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            BufferedImage source = ImageIO.read(inputStream);
+            if (source == null) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Unsupported image format.");
+            }
+
+            BufferedImage resized = Thumbnails.of(source)
+                    .size(MAX_ACTIVITY_IMAGE_DIMENSION, MAX_ACTIVITY_IMAGE_DIMENSION)
+                    .keepAspectRatio(true)
+                    .asBufferedImage();
+
+            writeWebp(resized, outputStream);
+            return new OptimizedImage(outputStream.toByteArray(), "image/webp");
+        } catch (IOException ex) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Unable to process the uploaded image.");
+        }
+    }
+
+    private void writeWebp(BufferedImage image, ByteArrayOutputStream outputStream) throws IOException {
+        Iterator<ImageWriter> writers = ImageIO.getImageWritersByMIMEType("image/webp");
+        if (!writers.hasNext()) {
+            throw new IllegalStateException("WebP writer is not available.");
+        }
+
+        ImageWriter writer = writers.next();
+        try (ImageOutputStream imageOutputStream = ImageIO.createImageOutputStream(outputStream)) {
+            writer.setOutput(imageOutputStream);
+
+            ImageWriteParam writeParam = writer.getDefaultWriteParam();
+            if (writeParam.canWriteCompressed()) {
+                writeParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+                writeParam.setCompressionQuality(ACTIVITY_IMAGE_QUALITY);
+            }
+
+            writer.write(null, new IIOImage(image, null, null), writeParam);
+        } finally {
+            writer.dispose();
+        }
     }
 
     private void ensureConfigured() {
@@ -189,5 +270,8 @@ public class StorageService {
     }
 
     public record UploadedFile(String url, String key, String contentType) {
+    }
+
+    private record OptimizedImage(byte[] bytes, String contentType) {
     }
 }

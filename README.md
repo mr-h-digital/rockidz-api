@@ -1,7 +1,7 @@
-# Rock Mission Ministries — Bible Study Learning API
+# Rock Mission Ministries — Kids Corner Learning API
 
 Spring Boot (Maven) backend for the Rock Mission Ministries Bible study learning
-platform. Serves a React SPA hosted on GitHub Pages (`learn.rockmission.co.za`)
+platform. Serves a React SPA hosted on GitHub Pages (`rockidz.rockmission.co.za`)
 and persists to PostgreSQL on Railway.
 
 ## Stack
@@ -45,7 +45,7 @@ not just at the route level.
 2. Call:
 
    ```bash
-   curl -X PATCH https://api.rockmission.co.za/api/admin/users/role \
+   curl -X PATCH https://rockidz-api.rockmission.co.za/api/admin/users/role \
      -H "Authorization: Bearer <ADMIN_JWT>" \
      -H "Content-Type: application/json" \
      -d '{"email":"educator@example.com","role":"EDUCATOR"}'
@@ -68,7 +68,7 @@ badges, Q&A/community.
 
 1. Create a local Postgres database, e.g.:
    ```bash
-   createdb rockmission_learn
+   createdb rockidz
    ```
 2. Run the app (Flyway will apply migrations automatically on startup). If you
    have Maven installed locally:
@@ -79,7 +79,7 @@ badges, Q&A/community.
    is already included) with `mvn -N wrapper:wrapper`, then use `./mvnw spring-boot:run`
    from then on.
    Default local config (see `application.yml`) points at
-   `jdbc:postgresql://localhost:5432/rockmission_learn` with `postgres`/`postgres`.
+   `jdbc:postgresql://localhost:5432/rockidz` with `postgres`/`postgres`.
    Override via env vars if your local setup differs.
 3. Try it:
    ```bash
@@ -102,7 +102,7 @@ badges, Q&A/community.
      auto-converts it to Spring JDBC settings at startup.
    - `JWT_SECRET` — a long random string (32+ characters). Generate one with
      `openssl rand -base64 48`, don't reuse the placeholder in `application.yml`.
-   - `CORS_ALLOWED_ORIGINS` — `https://learn.rockmission.co.za` (add
+   - `CORS_ALLOWED_ORIGINS` — `https://rockidz.rockmission.co.za` (add
      `http://localhost:5173` too while developing the React app locally)
 4. Railway sets `PORT` automatically — `application.yml` already reads
    `${PORT:8080}`, so no change needed there.
@@ -114,4 +114,4 @@ badges, Q&A/community.
 - Quizzes (MCQ) and certificate generation on course completion
 - Badges (rules-based, triggered off enrollment/progress updates)
 - Scaffold the React frontend against this API
-- Point `learn.rockmission.co.za` (CNAME) at the GitHub Pages app once it exists
+- Point `rockidz.rockmission.co.za` (CNAME) at the GitHub Pages app once it exists

@@ -12,10 +12,10 @@
     </parent>
 
     <groupId>co.za.rockmission</groupId>
-    <artifactId>learn-api</artifactId>
+    <artifactId>rockidz-api</artifactId>
     <version>0.1.0</version>
-    <name>rock-mission-learn-api</name>
-    <description>Rock Mission Ministries - Bible Study Learning Platform API</description>
+    <name>rockidz-api</name>
+    <description>Rockidz Kids Ministry Platform API</description>
 
     <properties>
         <java.version>21</java.version>

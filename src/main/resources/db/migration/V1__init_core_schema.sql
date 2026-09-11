@@ -1,5 +1,5 @@
 -- ============================================================
--- Rock Mission Ministries - Bible Study Learning Platform
+-- Rock Mission Ministries - Kids Corner Learning Platform
 -- V1: Core schema (auth, courses, structure, enrollment, progress)
 -- ============================================================
 

@@ -1,14 +1,14 @@
 spring:
   application:
-    name: rock-mission-learn-api
+    name: rockidz-api
 
   datasource:
     # Priority:
     # 1) SPRING_DATASOURCE_* (explicit)
     # 2) Railway PG* vars (PGHOST/PGPORT/PGDATABASE/PGUSER/PGPASSWORD)
     # 3) Local defaults
-    # If Railway only provides DATABASE_URL, LearnApiApplication maps it at startup.
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5432}/${PGDATABASE:rockmission_learn}}
+    # If Railway only provides DATABASE_URL, RockidzApiApplication maps it at startup.
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5432}/${PGDATABASE:rockidz}}
     username: ${SPRING_DATASOURCE_USERNAME:${PGUSER:postgres}}
     password: ${SPRING_DATASOURCE_PASSWORD:${PGPASSWORD:postgres}}
     driver-class-name: org.postgresql.Driver
@@ -38,9 +38,9 @@ app:
   auth:
     reset-token-minutes: ${RESET_TOKEN_MINUTES:30}
     expose-reset-token: ${EXPOSE_RESET_TOKEN:false}
-    reset-base-url: ${RESET_BASE_URL:https://learn.rockmission.co.za/reset-password}
+    reset-base-url: ${RESET_BASE_URL:https://rockidz.rockmission.co.za/reset-password}
   cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,https://learn.rockmission.co.za}
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,https://rockidz.rockmission.co.za}
 
 logging:
   level:

@@ -53,9 +53,20 @@ public class LessonController {
 
         Lesson lesson = Lesson.builder()
                 .module(module)
-                .title(request.title())
-                .videoProvider(Lesson.VideoProvider.valueOf(request.videoProvider().toUpperCase()))
-                .videoRef(request.videoRef())
+                .title(request.title().trim())
+                .contentType(Lesson.ContentType.valueOf(request.contentType().toUpperCase().trim()))
+                .content(trimToNull(request.content()))
+                .instructions(trimToNull(request.instructions()))
+                .questions(trimToNull(request.questions()))
+                .assetUrl(trimToNull(request.assetUrl()))
+                .downloadUrl(trimToNull(request.downloadUrl()))
+                .gameType(trimToNull(request.gameType()))
+                .gamePrompt(trimToNull(request.gamePrompt()))
+                .gameOptions(trimToNull(request.gameOptions()))
+                .gameAnswer(trimToNull(request.gameAnswer()))
+                .successMessage(trimToNull(request.successMessage()))
+                .retryMessage(trimToNull(request.retryMessage()))
+                .videoRef(trimToNull(request.videoRef()))
                 .durationSeconds(request.durationSeconds())
                 .orderIndex(request.orderIndex() != null ? request.orderIndex() : nextOrderIndex(moduleId))
                 .build();
@@ -101,8 +112,19 @@ public class LessonController {
         }
 
         lesson.setTitle(request.title().trim());
-        lesson.setVideoProvider(Lesson.VideoProvider.valueOf(request.videoProvider().toUpperCase().trim()));
-        lesson.setVideoRef(request.videoRef().trim());
+        lesson.setContentType(Lesson.ContentType.valueOf(request.contentType().toUpperCase().trim()));
+        lesson.setContent(trimToNull(request.content()));
+        lesson.setInstructions(trimToNull(request.instructions()));
+        lesson.setQuestions(trimToNull(request.questions()));
+        lesson.setAssetUrl(trimToNull(request.assetUrl()));
+        lesson.setDownloadUrl(trimToNull(request.downloadUrl()));
+        lesson.setGameType(trimToNull(request.gameType()));
+        lesson.setGamePrompt(trimToNull(request.gamePrompt()));
+        lesson.setGameOptions(trimToNull(request.gameOptions()));
+        lesson.setGameAnswer(trimToNull(request.gameAnswer()));
+        lesson.setSuccessMessage(trimToNull(request.successMessage()));
+        lesson.setRetryMessage(trimToNull(request.retryMessage()));
+        lesson.setVideoRef(trimToNull(request.videoRef()));
         lesson.setDurationSeconds(request.durationSeconds());
         lessonRepository.save(lesson);
         return toResponse(lesson);
@@ -123,8 +145,19 @@ public class LessonController {
     private LessonResponse toResponse(Lesson lesson) {
         return new LessonResponse(
                 lesson.getId(), lesson.getModule().getId(), lesson.getTitle(),
-                lesson.getVideoProvider().name(), lesson.getVideoRef(),
+                lesson.getContentType().name(), lesson.getContent(),
+                lesson.getInstructions(), lesson.getQuestions(),
+                lesson.getAssetUrl(), lesson.getDownloadUrl(),
+                lesson.getGameType(), lesson.getGamePrompt(), lesson.getGameOptions(),
+                lesson.getGameAnswer(), lesson.getSuccessMessage(), lesson.getRetryMessage(),
+                lesson.getVideoRef(),
                 lesson.getDurationSeconds(), lesson.getOrderIndex()
         );
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

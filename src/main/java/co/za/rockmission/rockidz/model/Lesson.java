@@ -30,12 +30,45 @@ public class Lesson {
     private String title;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "video_provider", nullable = false)
+    @Column(name = "content_type", nullable = false)
     @Builder.Default
-    private VideoProvider videoProvider = VideoProvider.YOUTUBE;
+    private ContentType contentType = ContentType.VIDEO;
+
+    @Column(columnDefinition = "TEXT")
+    private String content;
+
+    @Column(name = "instructions", columnDefinition = "TEXT")
+    private String instructions;
+
+    @Column(name = "questions", columnDefinition = "TEXT")
+    private String questions;
+
+    @Column(name = "asset_url")
+    private String assetUrl;
+
+    @Column(name = "download_url")
+    private String downloadUrl;
+
+    @Column(name = "game_type")
+    private String gameType;
+
+    @Column(name = "game_prompt", columnDefinition = "TEXT")
+    private String gamePrompt;
+
+    @Column(name = "game_options", columnDefinition = "TEXT")
+    private String gameOptions;
+
+    @Column(name = "game_answer", columnDefinition = "TEXT")
+    private String gameAnswer;
+
+    @Column(name = "success_message", columnDefinition = "TEXT")
+    private String successMessage;
+
+    @Column(name = "retry_message", columnDefinition = "TEXT")
+    private String retryMessage;
 
     /** For YOUTUBE this is the video ID (e.g. "pm3kChroXDk"), not the full URL. */
-    @Column(name = "video_ref", nullable = false)
+    @Column(name = "video_ref")
     private String videoRef;
 
     @Column(name = "duration_seconds")
@@ -53,7 +86,13 @@ public class Lesson {
         this.createdAt = Instant.now();
     }
 
-    public enum VideoProvider {
-        YOUTUBE, CLOUDFLARE, BUNNY
+    public enum ContentType {
+        VIDEO,
+        STORY,
+        QUESTIONS,
+        ACTIVITY,
+        GAME,
+        COLOURING_PAGE,
+        DOWNLOAD
     }
 }

@@ -5,8 +5,19 @@ import jakarta.validation.constraints.NotNull;
 
 public record UpdateLessonRequest(
         @NotBlank String title,
-        @NotNull String videoProvider,
-        @NotBlank String videoRef,
+        @NotNull String contentType,
+        String content,
+        String instructions,
+        String questions,
+        String assetUrl,
+        String downloadUrl,
+        String gameType,
+        String gamePrompt,
+        String gameOptions,
+        String gameAnswer,
+        String successMessage,
+        String retryMessage,
+        String videoRef,
         Integer durationSeconds
 ) {
 }

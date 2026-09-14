@@ -134,7 +134,12 @@ public class ModuleController {
     private LessonResponse toLessonResponse(Lesson lesson) {
         return new LessonResponse(
                 lesson.getId(), lesson.getModule().getId(), lesson.getTitle(),
-                lesson.getVideoProvider().name(), lesson.getVideoRef(),
+                lesson.getContentType().name(), lesson.getContent(),
+                lesson.getInstructions(), lesson.getQuestions(),
+                lesson.getAssetUrl(), lesson.getDownloadUrl(),
+                lesson.getGameType(), lesson.getGamePrompt(), lesson.getGameOptions(),
+                lesson.getGameAnswer(), lesson.getSuccessMessage(), lesson.getRetryMessage(),
+                lesson.getVideoRef(),
                 lesson.getDurationSeconds(), lesson.getOrderIndex()
         );
     }

@@ -70,9 +70,7 @@ public class LessonProgressController {
             return;
         }
 
-        long totalLessons = enrollment.getCourse().getModules().stream()
-                .mapToLong(m -> lessonRepository.findByModuleIdOrderByOrderIndexAsc(m.getId()).size())
-                .sum();
+        long totalLessons = lessonRepository.countByCourseId(courseId);
         long completedLessons = lessonProgressRepository.countCompletedLessonsForCourse(userId, courseId);
 
         if (totalLessons > 0 && completedLessons >= totalLessons) {

@@ -66,9 +66,7 @@ public class EnrollmentController {
     }
 
     private EnrollmentResponse toResponse(Enrollment enrollment) {
-        long totalLessons = enrollment.getCourse().getModules().stream()
-                .mapToLong(m -> lessonRepository.findByModuleIdOrderByOrderIndexAsc(m.getId()).size())
-                .sum();
+        long totalLessons = lessonRepository.countByCourseId(enrollment.getCourse().getId());
 
         long completedLessons = lessonProgressRepository.countCompletedLessonsForCourse(
                 enrollment.getUser().getId(), enrollment.getCourse().getId()

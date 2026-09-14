@@ -115,6 +115,7 @@ badges, Q&A/community.
      or the Railway bucket variable names:
      `ENDPOINT`, `REGION`, `BUCKET`, `ACCESS_KEY_ID`, `SECRET_ACCESS_KEY`
    - Optional file CDN/public URL override: `STORAGE_PUBLIC_BASE_URL`
+     or `PUBLIC_BASE_URL`
 4. Railway sets `PORT` automatically — `application.yml` already reads
    `${PORT:8080}`, so no change needed there.
 5. On first deploy, Flyway will run `V1__init_core_schema.sql` against the

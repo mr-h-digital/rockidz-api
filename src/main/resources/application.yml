@@ -59,7 +59,7 @@ app:
     bucket-name: ${STORAGE_BUCKET_NAME:${BUCKET:}}
     access-key-id: ${STORAGE_ACCESS_KEY_ID:${ACCESS_KEY_ID:}}
     secret-access-key: ${STORAGE_SECRET_ACCESS_KEY:${SECRET_ACCESS_KEY:}}
-    public-base-url: ${STORAGE_PUBLIC_BASE_URL:}
+    public-base-url: ${STORAGE_PUBLIC_BASE_URL:${PUBLIC_BASE_URL:}}
 
 logging:
   level:

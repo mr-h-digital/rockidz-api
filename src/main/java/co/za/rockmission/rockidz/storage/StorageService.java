@@ -140,6 +140,10 @@ public class StorageService {
             ImageWriteParam writeParam = writer.getDefaultWriteParam();
             if (writeParam.canWriteCompressed()) {
                 writeParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+                String[] compressionTypes = writeParam.getCompressionTypes();
+                if (compressionTypes != null && compressionTypes.length > 0) {
+                    writeParam.setCompressionType(compressionTypes[0]);
+                }
                 writeParam.setCompressionQuality(ACTIVITY_IMAGE_QUALITY);
             }
 

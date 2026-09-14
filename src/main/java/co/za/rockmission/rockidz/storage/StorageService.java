@@ -264,7 +264,8 @@ public class StorageService {
 
     private String requireConfigured(String value, String envName) {
         if (value == null || value.isBlank()) {
-            throw new IllegalStateException(envName + " must be configured for file uploads.");
+            throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE,
+                    envName + " must be configured for file uploads.");
         }
         return value.trim();
     }

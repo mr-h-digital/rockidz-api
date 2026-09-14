@@ -7,6 +7,7 @@ import co.za.rockmission.rockidz.exception.ApiException;
 import co.za.rockmission.rockidz.model.Lesson;
 import co.za.rockmission.rockidz.model.Module;
 import co.za.rockmission.rockidz.model.User;
+import co.za.rockmission.rockidz.repository.CourseRepository;
 import co.za.rockmission.rockidz.repository.LessonRepository;
 import co.za.rockmission.rockidz.repository.ModuleRepository;
 import jakarta.validation.Valid;
@@ -28,6 +29,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class LessonController {
 
+    private final CourseRepository courseRepository;
     private final ModuleRepository moduleRepository;
     private final LessonRepository lessonRepository;
 
@@ -49,7 +51,7 @@ public class LessonController {
         Module module = moduleRepository.findById(moduleId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Module not found"));
 
-        assertOwnerOrAdmin(module, currentUser);
+        assertOwnerOrAdmin(module.getCourse().getId(), currentUser);
 
         Lesson lesson = Lesson.builder()
                 .module(module)
@@ -84,7 +86,7 @@ public class LessonController {
     ) {
         Module module = moduleRepository.findById(moduleId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Module not found"));
-        assertOwnerOrAdmin(module, currentUser);
+        assertOwnerOrAdmin(module.getCourse().getId(), currentUser);
 
         Lesson lesson = lessonRepository.findById(lessonId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Lesson not found"));
@@ -103,7 +105,7 @@ public class LessonController {
     ) {
         Module module = moduleRepository.findById(moduleId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Module not found"));
-        assertOwnerOrAdmin(module, currentUser);
+        assertOwnerOrAdmin(module.getCourse().getId(), currentUser);
 
         Lesson lesson = lessonRepository.findById(lessonId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Lesson not found"));
@@ -134,9 +136,14 @@ public class LessonController {
         return lessonRepository.findByModuleIdOrderByOrderIndexAsc(moduleId).size();
     }
 
-    private void assertOwnerOrAdmin(Module module, User currentUser) {
-        boolean isOwner = module.getCourse().getCreatedBy().getId().equals(currentUser.getId());
-        boolean isAdmin = currentUser.getRole().name().equals("ADMIN");
+    private void assertOwnerOrAdmin(Long courseId, User currentUser) {
+        if (currentUser == null) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "Authentication required");
+        }
+
+        boolean isOwner = courseRepository.existsByIdAndCreatedById(courseId, currentUser.getId());
+        boolean isAdmin = currentUser.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
         if (!isOwner && !isAdmin) {
             throw new ApiException(HttpStatus.FORBIDDEN, "You do not own this course");
         }

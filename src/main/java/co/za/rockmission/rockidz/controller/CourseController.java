@@ -18,6 +18,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -135,6 +136,23 @@ public class CourseController {
         return ResponseEntity.ok(new FileUploadResponse(uploaded.url(), uploaded.key(), uploaded.contentType()));
     }
 
+    @GetMapping("/{id}/thumbnail")
+    public ResponseEntity<byte[]> getThumbnail(@PathVariable Long id) {
+        Course course = courseRepository.findById(id)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Course not found"));
+
+        if (course.getThumbnailUrl() == null || course.getThumbnailUrl().isBlank()) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "Course thumbnail not found");
+        }
+
+        StorageService.StoredFile storedFile = requireStorageService().fetchByUrl(course.getThumbnailUrl());
+        MediaType mediaType = MediaType.parseMediaType(storedFile.contentType());
+
+        return ResponseEntity.ok()
+                .contentType(mediaType)
+                .body(storedFile.bytes());
+    }
+
     @PatchMapping("/{id}/publish")
     @PreAuthorize("hasAnyRole('EDUCATOR', 'ADMIN')")
     public CourseSummaryResponse publish(@PathVariable Long id, @AuthenticationPrincipal User currentUser) {
@@ -208,7 +226,9 @@ public class CourseController {
                 course.getSlug(),
                 course.getTitle(),
                 course.getDescription(),
-                course.getThumbnailUrl(),
+                course.getThumbnailUrl() == null || course.getThumbnailUrl().isBlank()
+                        ? null
+                        : "/api/courses/" + course.getId() + "/thumbnail",
                 course.getStatus().name(),
                 course.getCreatedBy().getDisplayName(),
                 enrolledCount

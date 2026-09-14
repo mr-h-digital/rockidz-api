@@ -3,10 +3,12 @@ package co.za.rockmission.rockidz.storage;
 import co.za.rockmission.rockidz.config.StorageProperties;
 import co.za.rockmission.rockidz.exception.ApiException;
 import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.URL;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.UUID;
@@ -22,9 +24,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
@@ -75,6 +80,30 @@ public class StorageService {
                 RequestBody.fromBytes(optimizedImage.bytes()));
 
         return new UploadedFile(buildPublicUrl(objectKey), objectKey, optimizedImage.contentType());
+    }
+
+    public StoredFile fetchByUrl(String fileUrl) {
+        ensureConfigured();
+
+        if (fileUrl == null || fileUrl.isBlank()) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "File not found.");
+        }
+
+        String objectKey = extractObjectKey(fileUrl.trim());
+
+        try {
+            ResponseBytes<?> bytes = getS3Client().getObjectAsBytes(
+                    GetObjectRequest.builder()
+                            .bucket(requireConfigured(storageProperties.bucketName(), "STORAGE_BUCKET_NAME"))
+                            .key(objectKey)
+                            .build());
+
+            return new StoredFile(bytes.asByteArray(), detectContentType(fileUrl, objectKey));
+        } catch (NoSuchKeyException ex) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "File not found.");
+        } catch (RuntimeException ex) {
+            throw new ApiException(HttpStatus.BAD_GATEWAY, "Unable to load the stored file.");
+        }
     }
 
     private UploadedFile upload(MultipartFile file, String prefix, boolean requireImage, boolean allowDocuments) {
@@ -242,6 +271,32 @@ public class StorageService {
         );
     }
 
+    private String extractObjectKey(String fileUrl) {
+        String normalizedUrl = normalizeBaseUrl(fileUrl);
+        URI uri = URI.create(normalizedUrl);
+        String path = uri.getPath();
+        if (path == null || path.isBlank()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "File URL is invalid.");
+        }
+
+        String trimmedPath = path.replaceFirst("^/+", "");
+        String bucketPrefix = requireConfigured(storageProperties.bucketName(), "STORAGE_BUCKET_NAME") + "/";
+        if (trimmedPath.startsWith(bucketPrefix)) {
+            return trimmedPath.substring(bucketPrefix.length());
+        }
+
+        return trimmedPath;
+    }
+
+    private String detectContentType(String fileUrl, String objectKey) {
+        String lower = (fileUrl + " " + objectKey).toLowerCase(Locale.ROOT);
+        if (lower.contains(".webp")) return "image/webp";
+        if (lower.contains(".png")) return "image/png";
+        if (lower.contains(".jpg") || lower.contains(".jpeg")) return "image/jpeg";
+        if (lower.contains(".gif")) return "image/gif";
+        return "application/octet-stream";
+    }
+
     private String normalizeBaseUrl(String value) {
         String trimmed = value.trim();
         if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
@@ -278,6 +333,9 @@ public class StorageService {
     }
 
     public record UploadedFile(String url, String key, String contentType) {
+    }
+
+    public record StoredFile(byte[] bytes, String contentType) {
     }
 
     private record OptimizedImage(byte[] bytes, String contentType) {

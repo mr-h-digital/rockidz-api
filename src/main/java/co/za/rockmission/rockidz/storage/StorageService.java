@@ -25,6 +25,7 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @Service
@@ -69,6 +70,7 @@ public class StorageService {
                         .bucket(requireConfigured(storageProperties.bucketName(), "STORAGE_BUCKET_NAME"))
                         .key(objectKey)
                         .contentType(optimizedImage.contentType())
+                        .acl(ObjectCannedACL.PUBLIC_READ)
                         .build(),
                 RequestBody.fromBytes(optimizedImage.bytes()));
 
@@ -98,6 +100,7 @@ public class StorageService {
                             .bucket(requireConfigured(storageProperties.bucketName(), "STORAGE_BUCKET_NAME"))
                             .key(objectKey)
                             .contentType(contentType)
+                            .acl(ObjectCannedACL.PUBLIC_READ)
                             .build(),
                     RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
         } catch (IOException ex) {

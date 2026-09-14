@@ -82,6 +82,33 @@ public class StorageService {
         return new UploadedFile(buildPublicUrl(objectKey), objectKey, optimizedImage.contentType());
     }
 
+    public UploadedFile uploadLessonAssetImage(MultipartFile file, Long lessonId) {
+        ensureConfigured();
+
+        if (file == null || file.isEmpty()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Please choose an image to upload.");
+        }
+
+        String contentType = normalizeContentType(file.getContentType());
+        if (!contentType.startsWith("image/")) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Only image files can be uploaded here.");
+        }
+
+        OptimizedImage optimizedImage = optimizeActivityImage(file);
+        String objectKey = "lesson-assets/" + lessonId + "/" + UUID.randomUUID() + ".webp";
+
+        getS3Client().putObject(
+                PutObjectRequest.builder()
+                        .bucket(requireConfigured(storageProperties.bucketName(), "STORAGE_BUCKET_NAME"))
+                        .key(objectKey)
+                        .contentType(optimizedImage.contentType())
+                        .acl(ObjectCannedACL.PUBLIC_READ)
+                        .build(),
+                RequestBody.fromBytes(optimizedImage.bytes()));
+
+        return new UploadedFile(buildPublicUrl(objectKey), objectKey, optimizedImage.contentType());
+    }
+
     public StoredFile fetchByUrl(String fileUrl) {
         ensureConfigured();
 

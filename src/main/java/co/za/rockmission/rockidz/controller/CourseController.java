@@ -112,7 +112,7 @@ public class CourseController {
         course.setSlug(normalizedSlug);
         course.setTitle(request.title().trim());
         course.setDescription(request.description() == null ? null : request.description().trim());
-        course.setThumbnailUrl(request.thumbnailUrl() == null ? null : request.thumbnailUrl().trim());
+        course.setThumbnailUrl(normalizeThumbnailSourceUrl(request.thumbnailUrl()));
         courseRepository.save(course);
         return toSummary(course);
     }
@@ -145,7 +145,17 @@ public class CourseController {
             throw new ApiException(HttpStatus.NOT_FOUND, "Course thumbnail not found");
         }
 
-        StorageService.StoredFile storedFile = requireStorageService().fetchByUrl(course.getThumbnailUrl());
+        String thumbnailSourceUrl = normalizeThumbnailSourceUrl(course.getThumbnailUrl());
+        if (thumbnailSourceUrl == null) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "Course thumbnail not found");
+        }
+        if (!thumbnailSourceUrl.equals(course.getThumbnailUrl())) {
+            course.setThumbnailUrl(null);
+            courseRepository.save(course);
+            throw new ApiException(HttpStatus.NOT_FOUND, "Course thumbnail not found");
+        }
+
+        StorageService.StoredFile storedFile = requireStorageService().fetchByUrl(thumbnailSourceUrl);
         MediaType mediaType = MediaType.parseMediaType(storedFile.contentType());
 
         return ResponseEntity.ok()
@@ -221,17 +231,38 @@ public class CourseController {
 
     private CourseSummaryResponse toSummary(Course course) {
         long enrolledCount = enrollmentRepository.countByCourseId(course.getId());
+        String thumbnailSourceUrl = normalizeThumbnailSourceUrl(course.getThumbnailUrl());
+        if (thumbnailSourceUrl != null && !thumbnailSourceUrl.equals(course.getThumbnailUrl())) {
+            course.setThumbnailUrl(null);
+            courseRepository.save(course);
+            thumbnailSourceUrl = null;
+        }
         return new CourseSummaryResponse(
                 course.getId(),
                 course.getSlug(),
                 course.getTitle(),
                 course.getDescription(),
-                course.getThumbnailUrl() == null || course.getThumbnailUrl().isBlank()
+                thumbnailSourceUrl == null
                         ? null
                         : "/api/courses/" + course.getId() + "/thumbnail",
                 course.getStatus().name(),
                 course.getCreatedBy().getDisplayName(),
                 enrolledCount
         );
+    }
+
+    private String normalizeThumbnailSourceUrl(String thumbnailUrl) {
+        if (thumbnailUrl == null) {
+            return null;
+        }
+
+        String normalized = thumbnailUrl.trim();
+        if (normalized.isBlank()) {
+            return null;
+        }
+        if (normalized.matches("^/api/courses/\\d+/thumbnail$")) {
+            return null;
+        }
+        return normalized;
     }
 }

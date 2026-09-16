@@ -33,8 +33,6 @@ spring:
           fetch_size: 50
         order_inserts: true
         order_updates: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        use_sql_comments: false
 
   flyway:
     enabled: true

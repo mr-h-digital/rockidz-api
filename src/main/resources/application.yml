@@ -13,11 +13,16 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME:${PGUSER:${POSTGRES_USER:postgres}}}
     password: ${SPRING_DATASOURCE_PASSWORD:${PGPASSWORD:${POSTGRES_PASSWORD:postgres}}}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      minimum-idle: 1
+      maximum-pool-size: 3
+      initialization-fail-timeout: 0
 
   jpa:
     hibernate:
-      ddl-auto: validate   # schema is owned by Flyway migrations, not Hibernate
+      ddl-auto: validate
     open-in-view: false
+    defer-datasource-initialization: false
     properties:
       hibernate:
         format_sql: false
@@ -28,6 +33,8 @@ spring:
           fetch_size: 50
         order_inserts: true
         order_updates: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        use_sql_comments: false
 
   flyway:
     enabled: true
@@ -41,6 +48,11 @@ spring:
 
 server:
   port: ${PORT:8080}
+  tomcat:
+    threads:
+      max: 10
+      min-spare: 2
+    accept-count: 5
 
 app:
   jwt:
@@ -70,3 +82,6 @@ logging:
   level:
     co.za.rockmission: INFO
     org.springframework.security: INFO
+    org.hibernate: WARN
+    org.springframework.orm: WARN
+    org.springframework.data: WARN
